@@ -1,2 +1,3 @@
 # Boolean-Model-In-Information-Retrieval
-It contains a boolean model with its documents.
+# First use pip install nltk
+# Mkae sure files are in correct order
