@@ -11,7 +11,7 @@ def clean_doc_id(filename):
     name = name.lower().replace("speech", "").replace("_", "").replace(" ", "")                                                       # eliminate the 'speech' in filename to get only file number
     return name
 
-def preprocess_text(text, stopwords):
+def preprocess(text, stopwords):
     text = text.lower()                                                                                                              # case fold
     text = re.sub(r'[^a-z0-9\s]', ' ', text)                                                                                         # remove punctuation
     words = text.split() 
@@ -27,7 +27,7 @@ def load_documents(folder_path, stopwords):                                     
     for filename in os.listdir(folder_path):                                                                                      # look for every file in Folder
         with open(os.path.join(folder_path, filename), 'r') as f:                                                                  # Read the file content
             clean_id = clean_doc_id(filename)                                                                                      # extracting the file number
-            docs[clean_id] = preprocess(f.read())                                                        # preprocess the content by case folding, remove stop words and lemmatization
+            docs[clean_id] = preprocess(f.read(), stopwords)                                                        # preprocess the content by case folding, remove stop words and lemmatization
     return docs
 
 def build_vocabulary(docs):
@@ -51,18 +51,7 @@ def build_vectors(tf, idf, vocab):
         vectors[doc] = [counts.get(term, 0) * idf[term] for term in vocab]
     return vectors
 
-def preprocess(text):
-    text = text.lower()                                                                                                              # case fold
-    text = re.sub(r'[^a-z0-9\s]', ' ', text)                                                                                         # remove punctuation
-    words = text.split()                                                                                        # lemmatization
-    return words
-
-def build_inverted_index(folder_path):
-    docs = {}
-    for filename in os.listdir(folder_path):                                                                                      # look for every file in Folder
-        with open(os.path.join(folder_path, filename), 'r') as f:                                                                  # Read the file content
-            clean_id = clean_doc_id(filename)                                                                                      # extracting the file number
-            docs[clean_id] = preprocess(f.read())                                                        # preprocess the content by case folding, remove stop words and lemmatization
+def build_inverted_index(docs):
     index = defaultdict(list)
     for doc, words in docs.items():
         for word in set(words):
@@ -80,7 +69,7 @@ def query_vector(query, vocab, idf, stopwords):
     counts = Counter(words)
     return [counts.get(term, 0) * idf.get(term, 0) for term in vocab]
 
-def search(query, vectors, vocab, idf, stopwords, alpha=0):
+def search(query, vectors, vocab, idf, stopwords, alpha=0.005):
     q_vec = query_vector(query, vocab, idf, stopwords)
     
     results = []
@@ -118,7 +107,7 @@ df = compute_df(docs, vocab)
 idf = compute_idf(df, len(docs))
     
 vectors = build_vectors(tf, idf, vocab)
-inverted_index = build_inverted_index(docs,stopwords)
+inverted_index = build_inverted_index(docs)
     
 save_indexes(vocab, inverted_index, vectors)
     
